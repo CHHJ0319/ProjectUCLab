@@ -29,7 +29,7 @@ namespace Actor
         private Animator anim;
         private AnimatorStateInfo currentBaseState;
 
-        private GameObject cameraObject;
+        //private GameObject cameraObject;
 
         static int idleState = Animator.StringToHash("Base Layer.Idle");
         static int locoState = Animator.StringToHash("Base Layer.Locomotion");
@@ -42,7 +42,7 @@ namespace Actor
             col = GetComponent<CapsuleCollider>();
             rb = GetComponent<Rigidbody>();
 
-            cameraObject = GameObject.FindWithTag("MainCamera");
+            //cameraObject = GameObject.FindWithTag("MainCamera");
 
             orgColHight = col.height;
             orgVectColCenter = col.center;
@@ -50,25 +50,49 @@ namespace Actor
 
         void FixedUpdate()
         {
-            float h = Input.GetAxis("Horizontal");
-            float v = Input.GetAxis("Vertical");
-            anim.SetFloat("Speed", v);
-            anim.SetFloat("Direction", h);
-            anim.speed = animSpeed;
-            currentBaseState = anim.GetCurrentAnimatorStateInfo(0);
             rb.useGravity = true;
 
-            velocity = new Vector3(0, 0, v);
+            float h = Input.GetAxis("Horizontal");
+            float v = Input.GetAxis("Vertical");
+
+            UpdateMovementAnimation(h, v);
+            UpdateAnimationState();
+            CalculateVelocity(v);
+            Jump();
+            ApplyMovement(h);
+            UpdateStateBehavior();
+        }
+
+        void UpdateMovementAnimation(float horizontal, float vertical)
+        {
+            anim.SetFloat("Speed", vertical);
+            anim.SetFloat("Direction", horizontal);
+
+            anim.speed = animSpeed;
+        }
+
+        void UpdateAnimationState()
+        {
+            currentBaseState = anim.GetCurrentAnimatorStateInfo(0);
+        }
+
+        void CalculateVelocity(float vertical)
+        {
+            velocity = new Vector3(0, 0, vertical);
             velocity = transform.TransformDirection(velocity);
-            if (v > 0.1)
+
+            if (vertical > 0.1f)
             {
                 velocity *= forwardSpeed;
             }
-            else if (v < -0.1)
+            else if (vertical < -0.1f)
             {
                 velocity *= backwardSpeed;
             }
+        }
 
+        void Jump()
+        {
             if (Input.GetButtonDown("Jump"))
             {
                 if (currentBaseState.fullPathHash == locoState)
@@ -80,10 +104,17 @@ namespace Actor
                     }
                 }
             }
+        }
 
+        void ApplyMovement(float horizontal)
+        {
             transform.localPosition += velocity * Time.fixedDeltaTime;
-            transform.Rotate(0, h * rotateSpeed, 0);
 
+            transform.Rotate(0, horizontal * rotateSpeed, 0);
+        }
+
+        void UpdateStateBehavior()
+        {
             if (currentBaseState.fullPathHash == locoState)
             {
                 if (useCurves)
@@ -142,7 +173,7 @@ namespace Actor
             }
         }
 
-        void resetCollider()
+            void resetCollider()
         {
             col.height = orgColHight;
             col.center = orgVectColCenter;
