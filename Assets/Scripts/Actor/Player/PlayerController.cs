@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Actor
+namespace Actor.Player
 {
     [RequireComponent(typeof(Animator))]
     [RequireComponent(typeof(CapsuleCollider))]
@@ -29,7 +29,7 @@ namespace Actor
         private Animator anim;
         private AnimatorStateInfo currentBaseState;
 
-        //private GameObject cameraObject;
+        private PlayerInputHandler playerInputHandler;
 
         static int idleState = Animator.StringToHash("Base Layer.Idle");
         static int locoState = Animator.StringToHash("Base Layer.Locomotion");
@@ -42,7 +42,7 @@ namespace Actor
             col = GetComponent<CapsuleCollider>();
             rb = GetComponent<Rigidbody>();
 
-            //cameraObject = GameObject.FindWithTag("MainCamera");
+            playerInputHandler = GetComponent<PlayerInputHandler>();
 
             orgColHight = col.height;
             orgVectColCenter = col.center;
@@ -50,17 +50,21 @@ namespace Actor
 
         void FixedUpdate()
         {
-            rb.useGravity = true;
+            float h = playerInputHandler.Horizontal;
+            float v = playerInputHandler.Vertical;
 
-            float h = Input.GetAxis("Horizontal");
-            float v = Input.GetAxis("Vertical");
-
+            SetGravity(true);
             UpdateMovementAnimation(h, v);
             UpdateAnimationState();
             CalculateVelocity(v);
             Jump();
             ApplyMovement(h);
             UpdateStateBehavior();
+        }
+
+        void SetGravity(bool active)
+        {
+            rb.useGravity = active;
         }
 
         void UpdateMovementAnimation(float horizontal, float vertical)
@@ -93,7 +97,7 @@ namespace Actor
 
         void Jump()
         {
-            if (Input.GetButtonDown("Jump"))
+            if (playerInputHandler.JumpTriggered)
             {
                 if (currentBaseState.fullPathHash == locoState)
                 {
@@ -119,12 +123,11 @@ namespace Actor
             {
                 if (useCurves)
                 {
-                    resetCollider();
+                    ResetCollider();
                 }
             }
             else if (currentBaseState.fullPathHash == jumpState)
             {
-                //cameraObject.SendMessage("setCameraPositionJumpView");
                 if (!anim.IsInTransition(0))
                 {
                     if (useCurves)
@@ -146,7 +149,7 @@ namespace Actor
                             }
                             else
                             {
-                                resetCollider();
+                                ResetCollider();
                             }
                         }
                     }
@@ -157,9 +160,9 @@ namespace Actor
             {
                 if (useCurves)
                 {
-                    resetCollider();
+                    ResetCollider();
                 }
-                if (Input.GetButtonDown("Jump"))
+                if (playerInputHandler.JumpTriggered)
                 {
                     anim.SetBool("Rest", true);
                 }
@@ -173,7 +176,7 @@ namespace Actor
             }
         }
 
-            void resetCollider()
+        void ResetCollider()
         {
             col.height = orgColHight;
             col.center = orgVectColCenter;
