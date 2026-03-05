@@ -18,12 +18,16 @@ namespace Actor.Player
         public float rotateSpeed = 5.0f;
         public float jumpPower = 3.0f;
 
+        public float mouseSensitivity = 0.2f;
+
         private CapsuleCollider col;
         private Rigidbody rb;
         private Animator anim;
 
         private float horizontal;
         private float vertical;
+        private Vector2 lookInput;
+
         private Vector3 velocity;
         private float orgColHeight;
         private Vector3 orgVectColCenter;
@@ -50,6 +54,8 @@ namespace Actor.Player
 
         void Update()
         {
+            lookInput = playerInputHandler.LookInput;
+
             horizontal = playerInputHandler.Horizontal;
             vertical = playerInputHandler.Vertical;
 
@@ -58,8 +64,6 @@ namespace Actor.Player
 
         void FixedUpdate()
         {
-            
-
             SetGravity(true);
             UpdateMovementAnimation();
             UpdateAnimationState();
@@ -77,7 +81,7 @@ namespace Actor.Player
         void UpdateMovementAnimation()
         {
             anim.SetFloat("Speed", vertical);
-            anim.SetFloat("Direction", horizontal);
+            anim.SetFloat("Direction", lookInput.x);
 
             anim.speed = animSpeed;
         }
@@ -107,10 +111,9 @@ namespace Actor.Player
             Vector3 newVelocity = new Vector3(velocity.x, currentVelocity.y, velocity.z);
             rb.linearVelocity = newVelocity;
 
-            if (horizontal != 0)
-            {
-                transform.Rotate(0, horizontal * rotateSpeed, 0);
-            }
+            float yaw = lookInput.x * mouseSensitivity;
+            Quaternion deltaRotation = Quaternion.Euler(0, yaw, 0);
+            rb.MoveRotation(rb.rotation * deltaRotation);
         }
 
         void Jump()

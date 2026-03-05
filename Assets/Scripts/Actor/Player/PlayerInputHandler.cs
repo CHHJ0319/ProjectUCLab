@@ -20,6 +20,7 @@ namespace Actor.Player
                 return false;
             }
         }
+        public Vector2 LookInput { get; private set; }
 
         public void OnMove(InputValue value)
         {
@@ -34,6 +35,11 @@ namespace Actor.Player
             {
                 _jumpTriggered = true;
             }
+        }
+
+        public void OnLook(InputValue value)
+        {
+            LookInput = value.Get<Vector2>();
         }
     }
 }
