@@ -93,7 +93,12 @@ namespace Actor.Player
 
         void CalculateVelocity()
         {
-            velocity = transform.forward * vertical;
+            velocity = (transform.forward * vertical) + (transform.right * horizontal);
+
+            if (velocity.magnitude > 1f)
+            {
+                velocity.Normalize();
+            }
 
             if (vertical > 0.1f)
             {
