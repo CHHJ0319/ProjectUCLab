@@ -8,7 +8,6 @@ namespace Actor.Player
 
     public class PlayerController : MonoBehaviour
     {
-
         public float animSpeed = 1.5f;
         public float lookSmoother = 3.0f;
         public bool useCurves = true;
@@ -16,17 +15,18 @@ namespace Actor.Player
 
         public float forwardSpeed = 7.0f;
         public float backwardSpeed = 2.0f;
-        public float rotateSpeed = 2.0f;
+        public float rotateSpeed = 5.0f;
         public float jumpPower = 3.0f;
 
         private CapsuleCollider col;
         private Rigidbody rb;
-
-        private Vector3 velocity;
-        private float orgColHight;
-        private Vector3 orgVectColCenter;
-
         private Animator anim;
+
+        private float horizontal;
+        private float vertical;
+        private Vector3 velocity;
+        private float orgColHeight;
+        private Vector3 orgVectColCenter;
         private AnimatorStateInfo currentBaseState;
 
         private PlayerInputHandler playerInputHandler;
@@ -44,21 +44,28 @@ namespace Actor.Player
 
             playerInputHandler = GetComponent<PlayerInputHandler>();
 
-            orgColHight = col.height;
+            orgColHeight = col.height;
             orgVectColCenter = col.center;
+        }
+
+        void Update()
+        {
+            horizontal = playerInputHandler.Horizontal;
+            vertical = playerInputHandler.Vertical;
+
+            CalculateVelocity();
         }
 
         void FixedUpdate()
         {
-            float h = playerInputHandler.Horizontal;
-            float v = playerInputHandler.Vertical;
+            
 
             SetGravity(true);
-            UpdateMovementAnimation(h, v);
+            UpdateMovementAnimation();
             UpdateAnimationState();
-            CalculateVelocity(v);
+            
             Jump();
-            ApplyMovement(h);
+            ApplyMovement();
             UpdateStateBehavior();
         }
 
@@ -67,7 +74,7 @@ namespace Actor.Player
             rb.useGravity = active;
         }
 
-        void UpdateMovementAnimation(float horizontal, float vertical)
+        void UpdateMovementAnimation()
         {
             anim.SetFloat("Speed", vertical);
             anim.SetFloat("Direction", horizontal);
@@ -80,10 +87,9 @@ namespace Actor.Player
             currentBaseState = anim.GetCurrentAnimatorStateInfo(0);
         }
 
-        void CalculateVelocity(float vertical)
+        void CalculateVelocity()
         {
-            velocity = new Vector3(0, 0, vertical);
-            velocity = transform.TransformDirection(velocity);
+            velocity = transform.forward * vertical;
 
             if (vertical > 0.1f)
             {
@@ -92,6 +98,18 @@ namespace Actor.Player
             else if (vertical < -0.1f)
             {
                 velocity *= backwardSpeed;
+            }
+        }
+
+        void ApplyMovement()
+        {
+            Vector3 currentVelocity = rb.linearVelocity;
+            Vector3 newVelocity = new Vector3(velocity.x, currentVelocity.y, velocity.z);
+            rb.linearVelocity = newVelocity;
+
+            if (horizontal != 0)
+            {
+                transform.Rotate(0, horizontal * rotateSpeed, 0);
             }
         }
 
@@ -108,13 +126,6 @@ namespace Actor.Player
                     }
                 }
             }
-        }
-
-        void ApplyMovement(float horizontal)
-        {
-            transform.localPosition += velocity * Time.fixedDeltaTime;
-
-            transform.Rotate(0, horizontal * rotateSpeed, 0);
         }
 
         void UpdateStateBehavior()
@@ -143,7 +154,7 @@ namespace Actor.Player
                         {
                             if (hitInfo.distance > useCurvesHeight)
                             {
-                                col.height = orgColHight - jumpHeight;
+                                col.height = orgColHeight - jumpHeight;
                                 float adjCenterY = orgVectColCenter.y + jumpHeight;
                                 col.center = new Vector3(0, adjCenterY, 0);
                             }
@@ -178,7 +189,7 @@ namespace Actor.Player
 
         void ResetCollider()
         {
-            col.height = orgColHight;
+            col.height = orgColHeight;
             col.center = orgVectColCenter;
         }
     }
